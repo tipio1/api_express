@@ -1,0 +1,14 @@
+{
+  "name": "express_apps",
+  "version": "1.0.0",
+  "description": "data_exporter",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "ben",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
