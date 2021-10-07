@@ -1,7 +1,7 @@
 # Info
 ## __creation of a small API to collect mqtt data from an arduino board and transcribe it to prometheus/grafana__ 
 
-*init*
+### *init*
 ```install node.js``` on the host
 *create a a working directory*
 ```npm init``` to create package.json
@@ -10,12 +10,13 @@
 - build the project with the code corresponding to the needs
 
 > After mofifying *package.json*, run ```npm install``` to update *package-lock.json*
-To commit :
+
+### To commit :
 - package.json
 - package-lock.json
 - .gitignore
 
-Never commit :
+### Never commit :
 - node-modules
 - .DS_Store
 - les mots de passe
