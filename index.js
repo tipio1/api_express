@@ -11,9 +11,13 @@ const port = 3001
 const twoNum = (nombre) => {
   return ('0' + nombre).slice(-2)
 }
-
+////////////////////////////////////////         date  metrics      ////////////////////////////////////////////////////////////////////
+// function to display the date on the server
+const hour = new Date();
+const minute = new Date();
+const seconde = new Date();
+const now = new Date();
 /*
-function to display the date on the server
 07/10/2021 12:36:22 = chosen format
 two methods are possible, this one with parentheses, "+" symbol and separators in quotes :
 const date = ('0' + timestamp.getDate()).slice(-2) + '/' + ('0' + (timestamp.getMonth()+1)).slice(-2) + '/' + timestamp.getFullYear();
@@ -27,6 +31,24 @@ const formatDate = (timestamp) => {
   return fullDate;
 }
 
+const formatHours = (timestamp) => {
+  const hour = `${twoNum(timestamp.getHours())}`;
+  return hour;
+}
+
+const formatMinutes = (timestamp) => {
+  const minutes = `${twoNum(timestamp.getMinutes())}`;
+  return minutes;
+}
+
+const formatSeconds = (timestamp) => {
+  const secondes = `${twoNum(timestamp.getSeconds())}`;
+  return secondes;
+}
+
+////////////////////////////////////////         date  metrics      ////////////////////////////////////////////////////////////////////
+
+
 /* metrics registry : declaration of metrics in an array
 for Prometheus, only use a name column and a value column or it may return an "NNAME" error */
 let metrics = [
@@ -34,6 +56,9 @@ let metrics = [
     { name: "hello_one", value: 2}, //, string: "b" },
     { name: "world_two", value: 3}, //, string: "c" },
     { name: "caracters_three", value: 4}, //, string: "d"},
+    { name: "hour", value: (`${formatHours(hour)}`)},
+    { name: "minute", value: (`${formatMinutes(minute)}`)}, 
+    { name: "seconde", value: 4}, // (`${formatSeconds(seconde)}`)}, 
   ];
 
 
@@ -51,8 +76,15 @@ const updateMetric = (name, value, string) => {
 
 // uses the "random" function to retrieve a random value at the mentioned value: here a number for the value
 setInterval(() => {
+    // get the date in timestamp
     metrics = updateMetric('today_is', Math.floor(Date.now() / 1000));
-    // get a random integer in an open right interval
+    // hours
+    metrics = updateMetric('hour', Math.floor(formatHours(new Date)));
+    // minutes
+    metrics = updateMetric('minute', Math.floor(formatMinutes(new Date)));
+    // seconds
+    metrics = updateMetric('seconde', Math.floor(formatSeconds(new Date)));
+    // get a random number in interval
     metrics = updateMetric('hello_one', Math.floor(Math.random(min = Math.ceil(0),max = Math.floor(100)) * (100 - 0) + 0));
     // get a random number
     metrics = updateMetric('world_two', Math.random());
