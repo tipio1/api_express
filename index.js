@@ -14,27 +14,87 @@ const mqtt = require('mqtt')
 const client = mqtt.connect('mqtt://test.mosquitto.org') // mqtt broker connection
 
 // mqtt topics declaration
-const TOPIC = "tipio1/temperature"; 
+const GLOBAL = "tipio"; 
+const RDN = "test/rdn_temp";
+const LUM = "sensor_lum/lum";
+const TEMP = "sensor_temp/temp";
+const MOV = "sensor_mov/mov";
 
 // mqtt suscribe & publish
 client.on('connect', () => {
-  client.subscribe(TOPIC, (err) => {
+  client.subscribe(GLOBAL, (err) => {
     if (!err) {
-      client.publish(TOPIC, 'Hello mqtt')
+      client.publish(GLOBAL, 'Hello mqtt')
+    }
+  })
+}) 
+
+client.on('connect', () => {
+  client.subscribe(RDN, (err) => {
+    if (!err) {
+      client.publish(RDN, 'Hello rdn_temp')
+    }
+  })
+}) 
+
+client.on('connect', () => {
+  client.subscribe(LUM, (err) => {
+    if (!err) {
+      client.publish(LUM, 'Hello lum')
+    }
+  })
+}) 
+
+client.on('connect', () => {
+  client.subscribe(TEMP, (err) => {
+    if (!err) {
+      client.publish(TEMP, 'Hello temp')
+    }
+  })
+}) 
+
+client.on('connect', () => {
+  client.subscribe(MOV, (err) => {
+    if (!err) {
+      client.publish(MOV, 'Hello mov')
     }
   })
 }) 
 
 // mqtt update metrics
 client.on('message', (topic, message) => {
-  if (topic === TOPIC) {
-    updateMetric('temperature', message);
+  if (topic === GLOBAL) {
+    updateMetric('tipio', message);
   }
   // message is Buffer
-  console.log("NEW MESSAGE")
+  // console.log("NEW calap")
   console.log(topic.toString())
   console.log(message.toString())
   // client.end()
+})
+
+client.on('message', (topic1, message1) => {
+  if (topic1 === RDN) {
+    updateMetric('rdn_temp', message1);
+  }
+})
+
+client.on('message', (topic2, message2) => {
+  if (topic2 === LUM) {
+    updateMetric('lum', message2);
+  }
+})
+
+client.on('message', (topic3, message3) => {
+  if (topic3 === TEMP) {
+    updateMetric('temp', message3);
+  }
+})
+
+client.on('message', (topic1, message4) => {
+  if (topic1 === MOV) {
+    updateMetric('mov', message4);
+  }
 })
 /////////////////////////////////////////           mqtt              /////////////////////////////////////////////////////////
 
@@ -73,7 +133,7 @@ const getSeconds = (timestamp) => {
   const secondes = `${twoNum(timestamp.getSeconds())}`;
   return secondes;
 }
-////////////////////////////////////////         date  metrics      ////////////////////////////////////////////////////////////////////
+////////////////////////////////////////         date  metrics      ///////////////////////////////////////////////////////////////
 /* metrics registry : declaration of metrics in an array
 for Prometheus, only use a name column and a value column or it may return an "NNAME" error */
 let metrics = [
@@ -81,10 +141,14 @@ let metrics = [
     { name: "hello_one", value: 2}, //, string: "b" },
     { name: "world_two", value: 3}, //, string: "c" },
     { name: "caracters_three", value: 4}, //, string: "d"},
-    { name: "hour", value: 0 },
-    { name: "minute", value: 0}, 
-    { name: "seconde", value: 0}, // (`${formatSeconds(seconde)}`)}, 
-    { name: "temperature", value: 25}
+    { name: "hour", value: 5},
+    { name: "minute", value: 6}, 
+    { name: "seconde", value: 7}, // (`${formatSeconds(seconde)}`)}, 
+    { name: "tipio", value: 8},
+    { name:"rdn_temp", value: 9},
+    { name:"lum", value: 10},
+    { name:"temp", value: 11},
+    { name:"mov", value: 12},
   ];
 
 /* internal metrics update : the metric is updated after having been processed by the function: "setInterval"
@@ -114,8 +178,17 @@ setInterval(() => {
     metrics = updateMetric('hello_one', Math.floor(Math.random(min = 0, max = 100) * (100 - 0) + 0));
     // get a random number
     metrics = updateMetric('world_two', Math.random());
+    // get a random number in interval
+    metrics = updateMetric('tipio', Math.floor(Math.random(min = 0, max = 100) * (100 - 0) + 0));
+    // get a random number
+    //metrics = updateMetric('rdn_temp', Math.random());
+    // metrics = updateMetric('lum', Math.floor(Math.random(min = 0, max = 100) * (100 - 0) + 0));
+    // get a random number
+    // metrics = updateMetric('temp', Math.random());
+    // get a random number
+    // metrics = updateMetric('mov', Math.random());
     // get random number and a random caracter : toString in base16 and don't realy undersatnd what is generating by "substring"
-    metrics = updateMetric('caracters_three', Math.random()); // +' '+ Math.random().toString(16).substring(3)); => only one value is accepted by prometheus
+    metrics = updateMetric('caracters_three', Math.random()); 
 }, 1000)
 
 // route declaration & Metrics exposition (to prometheus)
@@ -150,10 +223,12 @@ app.listen(port, () => {
 // random sting in console
 let r = Math.random().toString(36).substring(7);
 console.log("hello", r);
+// metrics = updateMetric('caracters_three', Math.random())+' '+ Math.random().toString(16).substring(3)); 
+// => only one value is accepted by prometheus
 
-////////////////////////////////////////         explanations of the "map" function      //////////////////////////////////////////////
+////////////////////////////////////////         explanations of the "map" function      ///////////////////////////////////////////
 const ex1 = [0, 1, 2, 3, 4] // array
-const ex2 = ex1.map((numb) => { // the "map" function passes through all the instances of the array and executes a "map" on each of them
+const ex2 = ex1.map((numb) => { //"map" function passes through all the instances of the array and executes a "map" on each of them
   if (numb > 2) { // if "numb > 2, if execute its action on each of the values greater than 2" and return "0" : ext2 result
     return 0;
   }
@@ -161,4 +236,4 @@ const ex2 = ex1.map((numb) => { // the "map" function passes through all the ins
 })
 // ex2 = [0, 2, 4, 0, 0]
 
-////////////////////////////////////////         explanations of the "map" function      //////////////////////////////////////////////
+////////////////////////////////////////         explanations of the "map" function      ////////////////////////////////////////////
