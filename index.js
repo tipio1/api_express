@@ -1,5 +1,5 @@
 /*
-write on oct 21 - author : benj & Max
+write on oct 21 - author : Benj & Max
 in direction of connection between arduino/mqtt and prometheus/grafana
 */
 // declaration of requires and port connection
@@ -7,16 +7,44 @@ const express = require('express')
 const app = express()
 const port = 3001
 
+/////////////////////////////////////////           mqtt              /////////////////////////////////////////////////////////
+/* mosquitto_sub -h test.mosquitto.org -t test 
+mosquitto_pub -h test.mosquitto.org -t test -m "calap" */
+const mqtt = require('mqtt')
+const client = mqtt.connect('mqtt://test.mosquitto.org') // mqtt broker connection
+
+// mqtt topics declaration
+const TOPIC = "tipio1/temperature"; 
+
+// mqtt suscribe & publish
+client.on('connect', () => {
+  client.subscribe(TOPIC, (err) => {
+    if (!err) {
+      client.publish(TOPIC, 'Hello mqtt')
+    }
+  })
+}) 
+
+// mqtt update metrics
+client.on('message', (topic, message) => {
+  if (topic === TOPIC) {
+    updateMetric('temperature', message);
+  }
+  // message is Buffer
+  console.log("NEW MESSAGE")
+  console.log(topic.toString())
+  console.log(message.toString())
+  // client.end()
+})
+/////////////////////////////////////////           mqtt              /////////////////////////////////////////////////////////
+
 //function to have two digits displayed in the date function with .slice : '0' + MyDate.getDate()).slice(-2)
 const twoNum = (nombre) => {
   return ('0' + nombre).slice(-2)
 }
-////////////////////////////////////////         date  metrics      ////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////         date  metrics      ////////////////////////////////////////////////////////////
 // function to display the date on the server
-const hour = new Date();
-const minute = new Date();
-const seconde = new Date();
-const now = new Date();
 /*
 07/10/2021 12:36:22 = chosen format
 two methods are possible, this one with parentheses, "+" symbol and separators in quotes :
@@ -31,24 +59,21 @@ const formatDate = (timestamp) => {
   return fullDate;
 }
 
-const formatHours = (timestamp) => {
-  const hour = `${twoNum(timestamp.getHours())}`;
+const getHours = (t) => {
+  const hour = `${twoNum(t.getHours())}`;
   return hour;
 }
 
-const formatMinutes = (timestamp) => {
+const getMinutes = (timestamp) => {
   const minutes = `${twoNum(timestamp.getMinutes())}`;
   return minutes;
 }
 
-const formatSeconds = (timestamp) => {
+const getSeconds = (timestamp) => {
   const secondes = `${twoNum(timestamp.getSeconds())}`;
   return secondes;
 }
-
 ////////////////////////////////////////         date  metrics      ////////////////////////////////////////////////////////////////////
-
-
 /* metrics registry : declaration of metrics in an array
 for Prometheus, only use a name column and a value column or it may return an "NNAME" error */
 let metrics = [
@@ -56,18 +81,18 @@ let metrics = [
     { name: "hello_one", value: 2}, //, string: "b" },
     { name: "world_two", value: 3}, //, string: "c" },
     { name: "caracters_three", value: 4}, //, string: "d"},
-    { name: "hour", value: (`${formatHours(hour)}`)},
-    { name: "minute", value: (`${formatMinutes(minute)}`)}, 
-    { name: "seconde", value: 4}, // (`${formatSeconds(seconde)}`)}, 
+    { name: "hour", value: 0 },
+    { name: "minute", value: 0}, 
+    { name: "seconde", value: 0}, // (`${formatSeconds(seconde)}`)}, 
+    { name: "temperature", value: 25}
   ];
-
 
 /* internal metrics update : the metric is updated after having been processed by the function: "setInterval"
 otherwise, she would return the value entered in the initial array to the server */
-const updateMetric = (name, value, string) => {
+const updateMetric = (title, numb) => {
     return metrics.map((metric) => {
-      if (metric.name === name) { // what exactly does this if ? and why the other metrics are outside parentheses ?
-        metric.value = value
+      if (metric.name === title) { // what exactly does this if ? and why the other metrics are outside parentheses ?
+        metric.value = numb
         // metric.string === string  // '==' or '===' is possible
       }
       return metric;
@@ -76,16 +101,17 @@ const updateMetric = (name, value, string) => {
 
 // uses the "random" function to retrieve a random value at the mentioned value: here a number for the value
 setInterval(() => {
+  const now = new Date;
     // get the date in timestamp
     metrics = updateMetric('today_is', Math.floor(Date.now() / 1000));
     // hours
-    metrics = updateMetric('hour', Math.floor(formatHours(new Date)));
+    metrics = updateMetric('hour', getHours(now));
     // minutes
-    metrics = updateMetric('minute', Math.floor(formatMinutes(new Date)));
+    metrics = updateMetric('minute', getMinutes(now));
     // seconds
-    metrics = updateMetric('seconde', Math.floor(formatSeconds(new Date)));
+    metrics = updateMetric('seconde', getSeconds(now));
     // get a random number in interval
-    metrics = updateMetric('hello_one', Math.floor(Math.random(min = Math.ceil(0),max = Math.floor(100)) * (100 - 0) + 0));
+    metrics = updateMetric('hello_one', Math.floor(Math.random(min = 0, max = 100) * (100 - 0) + 0));
     // get a random number
     metrics = updateMetric('world_two', Math.random());
     // get random number and a random caracter : toString in base16 and don't realy undersatnd what is generating by "substring"
@@ -105,7 +131,7 @@ app.get('/metrics', (req, res) => {
   const now = new Date();
   res.send(`today is ${formatDate(now)}`)
 
-  why is it not possible to display several successive information ?
+  why is it not possible to display several successive information ? use "next" ?
 
   */
   // display array metrics with the map
@@ -116,11 +142,23 @@ app.get('/metrics', (req, res) => {
   res.send(expose); // display of values on the server
 });
 
-// random sting in console
-let r = Math.random().toString(36).substring(7);
-console.log("hello", r);
-
 //listening port
 app.listen(port, () => {
   console.log(`Test app listening at http://localhost:${port}`)
 })
+
+// random sting in console
+let r = Math.random().toString(36).substring(7);
+console.log("hello", r);
+
+////////////////////////////////////////         explanations of the "map" function      //////////////////////////////////////////////
+const ex1 = [0, 1, 2, 3, 4] // array
+const ex2 = ex1.map((numb) => { // the "map" function passes through all the instances of the array and executes a "map" on each of them
+  if (numb > 2) { // if "numb > 2, if execute its action on each of the values greater than 2" and return "0" : ext2 result
+    return 0;
+  }
+  return numb * 2 // "else" map execute the multiplication action on values not affected by the "if"
+})
+// ex2 = [0, 2, 4, 0, 0]
+
+////////////////////////////////////////         explanations of the "map" function      //////////////////////////////////////////////
