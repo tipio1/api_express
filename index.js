@@ -14,10 +14,11 @@ const mqtt = require('mqtt')
 const client = mqtt.connect('mqtt://test.mosquitto.org') // mqtt broker connection
 
 // mqtt topics declaration
-const GLOBAL = "tipio"; 
+const GLOBAL = "tipio/basic"; 
 const RDN = "test/rdn_temp";
 const LUM = "sensor_lum/lum";
 const TEMP = "sensor_temp/temp";
+const TEMP_CONVERT = "sensor_temp/temp_convert";
 const MOV = "sensor_mov/mov";
 
 // mqtt suscribe & publish
@@ -52,6 +53,14 @@ client.on('connect', () => {
     }
   })
 }) 
+
+client.on('connect', () => {
+    client.subscribe(TEMP_CONVERT, (err) => {
+      if (!err) {
+        client.publish(TEMP_CONVERT, 'Hello temp_convert')
+      }
+    })
+  }) 
 
 client.on('connect', () => {
   client.subscribe(MOV, (err) => {
@@ -91,9 +100,15 @@ client.on('message', (topic3, message3) => {
   }
 })
 
-client.on('message', (topic1, message4) => {
-  if (topic1 === MOV) {
-    updateMetric('mov', message4);
+client.on('message', (topic4, message4) => {
+    if (topic4 === TEMP_CONVERT) {
+      updateMetric('temp_convert', message4);
+    }
+  })
+
+client.on('message', (topic5, message5) => {
+  if (topic5 === MOV) {
+    updateMetric('mov', message5);
   }
 })
 /////////////////////////////////////////           mqtt              /////////////////////////////////////////////////////////
@@ -148,7 +163,8 @@ let metrics = [
     { name:"rdn_temp", value: 9},
     { name:"lum", value: 10},
     { name:"temp", value: 11},
-    { name:"mov", value: 12},
+    { name:"temp_convert", value: 12},
+    { name:"mov", value: 13},
   ];
 
 /* internal metrics update : the metric is updated after having been processed by the function: "setInterval"
